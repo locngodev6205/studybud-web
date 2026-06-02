@@ -12,7 +12,7 @@
               <path d="M13.723 2.286l-13.723 13.714 13.719 13.714 1.616-1.611-10.96-10.96h27.625v-2.286h-27.625l10.965-10.965-1.616-1.607z"></path>
             </svg>
           </a>
-          <h3>Lời mời tham gia phòng học</h3>
+          <h3>Conversation Invitations</h3>
         </div>
       </div>
       <div class="layout__body" style="padding: 20px;">
@@ -22,17 +22,17 @@
               <li style="background-color: var(--color-dark); padding: 15px; border-radius: 8px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--color-dark-medium);">
                 <div>
                   <h4 style="color: var(--color-light); margin-bottom: 5px;">{{ invite.room.name }}</h4>
-                  <p style="font-size: 1.3rem; color: var(--color-light-gray);">Người mời: <strong>@{{ invite.sender.username }}</strong></p>
+                  <p style="font-size: 1.3rem; color: var(--color-light-gray);">Invited by: <strong>@{{ invite.sender.username }}</strong></p>
                 </div>
                 <div style="display: flex; gap: 10px;">
-                  <a href="{% url 'respond-invitation' invite.id 'accept' %}" class="btn btn--main" style="padding: 8px 15px; font-size: 1.3rem;">Chấp nhận</a>
-                  <a href="{% url 'respond-invitation' invite.id 'decline' %}" class="btn btn--dark" style="padding: 8px 15px; font-size: 1.3rem; border: 1px solid var(--color-light);">Từ chối</a>
+                  <a href="{% url 'respond-invitation' invite.id 'accept' %}" class="btn btn--main" style="padding: 8px 15px; font-size: 1.3rem;">Accept</a>
+                  <a href="{% url 'respond-invitation' invite.id 'decline' %}" class="btn btn--dark" style="padding: 8px 15px; font-size: 1.3rem; border: 1px solid var(--color-light);">Decline</a>
                 </div>
               </li>
             {% endfor %}
           </ul>
         {% else %}
-          <p style="text-align: center; color: var(--color-light); padding: 40px 0;">Bạn không có lời mời nào đang chờ.</p>
+          <p style="text-align: center; color: var(--color-light); padding: 40px 0;">You have no pending invitations.</p>
         {% endif %}
       </div>
     </div>

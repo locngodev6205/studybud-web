@@ -64,6 +64,8 @@ class Room(models.Model):
     participants = models.ManyToManyField(
         User, related_name='participants', blank=True)
     is_private = models.BooleanField(default=False)
+    image = models.ImageField(upload_to='room_images/', null=True, blank=True)
+    video = models.FileField(upload_to='room_videos/', null=True, blank=True)
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 

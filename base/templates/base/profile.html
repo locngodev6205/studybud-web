@@ -19,14 +19,14 @@
           <h3>{{user.name}}</h3>
           <p>@{{user.username}}</p>
           <p style="margin: 8px 0; color: var(--color-light); font-size: 1.4rem;">
-            <strong>{{user.followers_count}}</strong> Người theo dõi &nbsp;•&nbsp; 
-            <strong>{{user.following_count}}</strong> Đang theo dõi
+            <strong>{{user.followers_count}}</strong> Followers &nbsp;•&nbsp; 
+            <strong>{{user.following_count}}</strong> Following
           </p>
           {% if request.user == user %}
           <a href="{% url 'update-user' %}" class="btn btn--main btn--pill">Edit Profile</a>
           {% elif request.user.is_authenticated %}
           <a href="{% url 'follow-user' user.id %}" class="btn btn--main btn--pill">
-            {% if is_following %}Hủy theo dõi{% else %}Theo dõi{% endif %}
+            {% if is_following %}Unfollow{% else %}Follow{% endif %}
           </a>
           {% endif %}
         </div>

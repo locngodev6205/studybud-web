@@ -14,11 +14,11 @@
               </path>
             </svg>
           </a>
-          <h3>Create/Update Study Room</h3>
+          <h3>Create/Update Conversation</h3>
         </div>
       </div>
       <div class="layout__body">
-        <form class="form" action="" method="POST">
+        <form class="form" action="" method="POST" enctype="multipart/form-data">
           {% csrf_token %}
 
           <div class="form__group">
@@ -35,19 +35,29 @@
 
 
           <div class="form__group">
-            <label for="room_name">Room Name</label>
+            <label for="room_name">Conversation Name</label>
             {{form.name}}
           </div>
 
           <div class="form__group">
-            <label for="room_description">Room Description</label>
+            <label for="room_description">Description</label>
             {{form.description}}
+          </div>
+          
+          <div class="form__group">
+            <label for="room_image">Attached Image (optional)</label>
+            {{form.image}}
+          </div>
+          
+          <div class="form__group">
+            <label for="room_video">Attached Video (optional)</label>
+            {{form.video}}
           </div>
 
           <div class="form__group">
             <label for="is_private" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
               <input type="checkbox" name="is_private" id="is_private" {% if room.is_private %}checked{% endif %} style="width: auto;" />
-              Phòng riêng tư (chỉ người được mời mới có thể vào)
+              Private Conversation (only invited users can join)
             </label>
           </div>
 

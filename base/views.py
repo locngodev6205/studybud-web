@@ -126,7 +126,7 @@ def room(request, pk):
             invitation.save()
             room.participants.add(request.user)
 
-    room_messages = room.message_set.filter(parent=None).order_by('created')
+    room_messages = room.message_set.filter(parent=None).order_by('-created')
     participants = room.participants.all()
 
     if request.method == 'POST':
@@ -246,7 +246,9 @@ def createRoom(request):
             topic=topic,
             name=request.POST.get('name'),
             description=request.POST.get('description'),
-            is_private=is_private
+            is_private=is_private,
+            image=request.FILES.get('image'),
+            video=request.FILES.get('video')
         )
         return redirect('home')
 
@@ -269,6 +271,17 @@ def updateRoom(request, pk):
         room.topic = topic
         room.description = request.POST.get('description')
         room.is_private = request.POST.get('is_private') == 'on'
+        
+        if request.FILES.get('image'):
+            room.image = request.FILES.get('image')
+        elif request.POST.get('image-clear'):
+            room.image = None
+            
+        if request.FILES.get('video'):
+            room.video = request.FILES.get('video')
+        elif request.POST.get('video-clear'):
+            room.video = None
+            
         room.save()
         return redirect('home')
 
