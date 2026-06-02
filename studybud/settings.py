@@ -32,6 +32,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-3#av2c6nptlbbb6^muqkc
 DEBUG = os.environ.get('RENDER', '') == '' # True if not on Render
 
 ALLOWED_HOSTS = ['*'] # In production, you should set this to your Render domain
+CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com', 'https://*.127.0.0.1']
 
 
 # Application definition
