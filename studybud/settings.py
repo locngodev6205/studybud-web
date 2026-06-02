@@ -25,12 +25,13 @@ SECRET_KEY = 'django-insecure-3#av2c6nptlbbb6^muqkchu&fe3wv&n$t2+g$v!ir-f5%doocb
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -42,6 +43,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     "corsheaders",
+    'channels',
 ]
 
 AUTH_USER_MODEL = 'base.User'
@@ -80,6 +82,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'studybud.wsgi.application'
+ASGI_APPLICATION = 'studybud.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database

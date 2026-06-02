@@ -33,7 +33,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/mnt/windows/Users/62205/Documents/locngo/school/6th-semester/Lập trình Python/Traversy-Media-StudyBud-12c9196/.venv'
+set -gx VIRTUAL_ENV '/mnt/windows/Users/62205/Documents/locngo/school/6th-semester/Lập trình Python/studybud/.venv'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

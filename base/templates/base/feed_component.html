@@ -1,3 +1,4 @@
+{% load custom_tags %}
 {% for room in rooms %}
 <div class="roomListRoom">
     <div class="roomListRoom__header">
@@ -7,14 +8,17 @@
             </div>
             <span>@{{room.host.username}}</span>
         </a>
-        <div class="roomListRoom__actions">
+        <div class="roomListRoom__actions" style="display: flex; align-items: center; gap: 8px;">
             <span>{{room.created|timesince}} ago</span>
+            {% if room.is_private %}
+            <span style="background-color: var(--color-main); color: white; padding: 2px 8px; border-radius: 4px; font-size: 1.1rem; font-weight: bold;">Riêng tư</span>
+            {% endif %}
         </div>
     </div>
     <div class="roomListRoom__content">
         <a href="{% url 'room' room.id %}">{{room.name}}</a>
     </div>
-    <div class="roomListRoom__meta">
+    <div class="roomListRoom__meta" style="display: flex; justify-content: space-between; align-items: center;">
         <a href="{% url 'room' room.id %}" class="roomListRoom__joined">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
                 <title>user-group</title>
@@ -33,6 +37,22 @@
             </svg>
             {{room.participants.all.count}} Joined
         </a>
+
+        <!-- Room Vote Controls -->
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 1.4rem;">
+            <a href="{% url 'vote-room' room.id 'up' %}" style="display: flex; align-items: center; color: {% if room|get_user_vote:request.user == 1 %}var(--color-main){% else %}var(--color-light){% endif %};" title="Upvote">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" style="fill: currentColor;">
+                    <path d="M16 4l-12 12h8v12h8v-12h8z"></path>
+                </svg>
+            </a>
+            <span style="font-weight: bold; color: var(--color-light);">{{ room.vote_score }}</span>
+            <a href="{% url 'vote-room' room.id 'down' %}" style="display: flex; align-items: center; color: {% if room|get_user_vote:request.user == -1 %}#e74c3c{% else %}var(--color-light){% endif %};" title="Downvote">
+                <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" style="fill: currentColor;">
+                    <path d="M16 28l12-12h-8v-12h-8v12h-8z"></path>
+                </svg>
+            </a>
+        </div>
+
         <p class="roomListRoom__topic">{{room.topic.name}}</p>
     </div>
 </div>

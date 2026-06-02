@@ -1,12 +1,15 @@
 {% extends 'main.html' %}
+{% load custom_tags %}
 
 {% block content %}
 <main class="profile-page layout layout--2">
   <div class="container">
     <!-- Room Start -->
-    <div class="room">
+    <div class="room" style="display: flex; flex-direction: column;">
+      
+      <!-- Top Actions Bar -->
       <div class="room__top">
-        <div class="room__topLeft">
+        <div class="room__topLeft" style="display: flex; align-items: center; gap: 15px;">
           <a href="{% url 'home' %}">
             <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
               <title>arrow-left</title>
@@ -16,9 +19,22 @@
             </svg>
           </a>
           <h3>Study Room</h3>
+          
+          <!-- Video Call Button -->
+          <button id="video-call-btn" class="btn btn--main" style="padding: 6px 12px; font-size: 1.3rem; display: flex; align-items: center; gap: 6px;">
+              <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 32 32" style="fill: currentColor;">
+                  <path d="M30 10l-10 6 10 6v-12zM2 6h16c1.1 0 2 0.9 2 2v16c0 1.1-0.9 2-2 2h-16c-1.1 0-2-0.9-2-2v-16c0-1.1 0.9-2 2-2z"></path>
+              </svg>
+              Gọi Video
+          </button>
         </div>
-        {% if room.host == request.user %}
-        <div class="room__topRight">
+        
+        <div class="room__topRight" style="display: flex; align-items: center; gap: 15px;">
+          {% if room.is_private %}
+          <span style="background-color: var(--color-main); color: white; padding: 4px 10px; border-radius: 4px; font-size: 1.2rem; font-weight: bold;">Riêng tư</span>
+          {% endif %}
+          
+          {% if room.host == request.user %}
           <a href="{% url 'update-room' room.id %}">
             <svg enable-background="new 0 0 24 24" height="32" viewBox="0 0 24 24" width="32"
               xmlns="http://www.w3.org/2000/svg">
@@ -46,100 +62,304 @@
               </path>
             </svg>
           </a>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Main Box Container (Single unified scroll flow) -->
+      <div class="room__box scroll" style="padding: 20px; display: flex; flex-direction: column; position: static; width: 100%;">
+        
+        <!-- Reddit-style original post container -->
+        <div class="reddit-post">
+          <!-- Upvote/Downvote left column -->
+          <div class="reddit-vote-col">
+            <a href="{% url 'vote-room' room.id 'up' %}" class="reddit-vote-btn {% if room|get_user_vote:request.user == 1 %}upvoted{% endif %}" title="Vote Up">▲</a>
+            <span class="reddit-vote-score">{{ room.vote_score }}</span>
+            <a href="{% url 'vote-room' room.id 'down' %}" class="reddit-vote-btn {% if room|get_user_vote:request.user == -1 %}downvoted{% endif %}" title="Vote Down">▼</a>
+          </div>
+          
+          <!-- Post Body right column -->
+          <div class="reddit-post-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <a href="{% url 'user-profile' room.host.id %}" class="room__author" style="display: flex; align-items: center; gap: 8px;">
+                <div class="avatar avatar--small">
+                  <img src="{{room.host.avatar.url}}" />
+                </div>
+                <span style="font-size: 1.4rem; color: var(--color-light-gray);">@{{room.host.username}}</span>
+              </a>
+              <span style="font-size: 1.2rem; color: var(--color-light-gray);">{{room.created|timesince}} ago</span>
+            </div>
+            
+            <h2 style="font-size: 2.2rem; color: var(--color-light); margin-bottom: 10px; font-weight: 600;">{{room.name}}</h2>
+            
+            {% if room.description %}
+            <p style="font-size: 1.45rem; color: var(--color-light); line-height: 1.5; margin-bottom: 15px; background: rgba(255,255,255,0.01); padding: 10px; border-radius: 5px;">
+              {{room.description}}
+            </p>
+            {% endif %}
+            
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="room__topics" style="display: inline-block;">{{room.topic}}</span>
+              <span style="font-size: 1.3rem; color: var(--color-gray);">{{ participants.count }} Members</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Jitsi Video Call Container (appears here dynamically when toggled) -->
+        <div id="video-call-container" style="display: none; width: 100%; height: 500px; background-color: #000; position: relative; margin-bottom: 20px; border-radius: 8px; overflow: hidden; border: 1px solid var(--color-dark-medium);">
+            <div id="jitsi-meet-room" style="width: 100%; height: 100%;"></div>
+            <button id="close-video-call" class="btn btn--dark" style="position: absolute; top: 15px; right: 15px; z-index: 100; padding: 6px 12px; font-size: 1.2rem;">Đóng cuộc gọi</button>
+        </div>
+
+        <!-- Reddit Comment Box (Placed right under the post) -->
+        {% if request.user.is_authenticated %}
+        <div class="reddit-comment-box-container">
+          <form action="" method="POST" enctype="multipart/form-data" id="chat-form">
+            {% csrf_token %}
+            <input type="hidden" name="parent_id" id="parent-id-input" value="" />
+            
+            <div id="reply-preview" style="display: none; background: var(--color-dark-medium); padding: 10px 15px; border-radius: 5px; margin-bottom: 10px; justify-content: space-between; align-items: center; font-size: 1.3rem;">
+                <span id="reply-text">Đang trả lời...</span>
+                <button type="button" id="cancel-reply-btn" style="background: none; border: none; color: var(--color-main); cursor: pointer; font-weight: bold;">Hủy</button>
+            </div>
+            
+            <div style="display: flex; width: 100%; gap: 10px; align-items: center;">
+                <input name="body" id="chat-message-input" placeholder="Bạn nghĩ gì về phòng học này? Viết bình luận của bạn..." style="flex: 1; padding: 12px; font-size: 1.4rem;" />
+                
+                <!-- Image attachment -->
+                <label for="chat-image" style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background-color: var(--color-dark-medium); border-radius: 5px;" title="Gửi ảnh">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" style="fill: var(--color-light);">
+                        <path d="M14 18c0 2.209-1.791 4-4 4s-4-1.791-4-4 1.791-4 4-4 4 1.791 4 4zM32 6v20c0 1.105-0.895 2-2 2h-28c-1.105 0-2-0.895-2-2v-20c0-1.105 0.895-2 2-2h28c1.105 0 2 0.895 2 2zM28 8h-24v11.586l6-6 8 8 4-4v-9.586z"></path>
+                    </svg>
+                </label>
+                <input type="file" name="image" id="chat-image" accept="image/*" style="display: none;" onchange="previewFile('image')" />
+                
+                <!-- Video attachment -->
+                <label for="chat-video" style="cursor: pointer; display: flex; align-items: center; justify-content: center; width: 42px; height: 42px; background-color: var(--color-dark-medium); border-radius: 5px;" title="Gửi video">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 32 32" style="fill: var(--color-light);">
+                        <path d="M30 10l-10 6 10 6v-12zM2 6h16c1.1 0 2 0.9 2 2v16c0 1.1-0.9 2-2 2h-16c-1.1 0-2-0.9-2-2v-16c0-1.1 0.9-2 2-2z"></path>
+                    </svg>
+                </label>
+                <input type="file" name="video" id="chat-video" accept="video/*" style="display: none;" onchange="previewFile('video')" />
+                
+                <button type="submit" class="btn btn--main" style="padding: 11px 20px;">Bình luận</button>
+            </div>
+            <div id="file-preview-name" style="margin-top: 8px; font-size: 1.2rem; color: var(--color-main); display: none;"></div>
+          </form>
         </div>
         {% endif %}
 
-      </div>
-      <div class="room__box scroll">
-        <div class="room__header scroll">
-          <div class="room__info">
-            <h3>{{room.name}}</h3>
-            <span>{{room.created|timesince}} ago</span>
+        <!-- Comments Threads List -->
+        <div class="threads" style="flex: 1; display: flex; flex-direction: column; gap: 15px;">
+          <h3 style="padding: 10px 0; font-size: 1.4rem;">{{ room_messages.count }} Bình luận</h3>
+          {% for message in room_messages %}
+          <div class="reddit-comment-thread">
+            {% include "base/comment_thread.html" with comment=message %}
           </div>
-          <div class="room__hosted">
-            <p>Hosted By</p>
-            <a href="{% url 'user-profile' room.host.id %}" class="room__author">
-              <div class="avatar avatar--small">
-                <img src="{{room.host.avatar.url}}" />
-              </div>
-              <span>@{{room.host.username}}</span>
-            </a>
-          </div>
-          <!-- <div class="room__details">
-            Lorem ipsum dolor sit, amet consectetur adipisicing elit. Quasi, tenetur laudantium? Dicta repellendus
-            rerum consectetur, voluptatem repudiandae eum ea porro cupiditate provident nulla, deserunt, ab ipsum
-            corporis laboriosam deleniti molestias?
-          </div> -->
-          <span class="room__topics">{{room.topic}}</span>
+          {% empty %}
+          <p style="text-align: center; padding: 40px 0; color: var(--color-gray); font-size: 1.4rem;">Chưa có bình luận nào. Hãy là người đầu tiên bình luận!</p>
+          {% endfor %}
         </div>
 
-        <div class="room__conversation">
-          <div class="threads scroll">
-
-
-            {% for message in room_messages %}
-            <div class="thread">
-              <div class="thread__top">
-                <div class="thread__author">
-                  <a href="{% url 'user-profile' message.user.id %}" class="thread__authorInfo">
-                    <div class="avatar avatar--small">
-                      <img src="{{message.user.avatar.url}}" />
-                    </div>
-                    <span>@{{message.user.username}}</span>
-                  </a>
-                  <span class="thread__date">{{message.created|timesince}} ago</span>
-                </div>
-
-                {% if request.user == message.user %}
-                <a href="{% url 'delete-message' message.id %}">
-                  <div class="thread__delete">
-                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-                      <title>remove</title>
-                      <path
-                        d="M27.314 6.019l-1.333-1.333-9.98 9.981-9.981-9.981-1.333 1.333 9.981 9.981-9.981 9.98 1.333 1.333 9.981-9.98 9.98 9.98 1.333-1.333-9.98-9.98 9.98-9.981z">
-                      </path>
-                    </svg>
-                  </div>
-                </a>
-                {% endif %}
-              </div>
-              <div class="thread__details">
-                {{message.body}}
-              </div>
-            </div>
-            {% endfor %}
-          </div>
-        </div>
-
-      </div>
-      <div class="room__message">
-        <form action="" method="POST">
-          {% csrf_token %}
-          <input name="body" placeholder="Write your message here..." />
-        </form>
       </div>
     </div>
     <!-- Room End -->
 
-    <!--   Start -->
-    <div class="participants">
-      <h3 class="participants__top">Participants <span>({{participants.count}} Joined)</span></h3>
-      <div class="participants__list scroll">
-        {% for user in participants %}
-        <a href="{%  url 'user-profile' user.id %}" class="participant">
-          <div class="avatar avatar--medium">
-            <img src="{{user.avatar.url}}" />
-          </div>
-          <p>
-            {{user.name}}
-            <span>@{{user.username}}</span>
-          </p>
-        </a>
-        {% endfor %}
+    <!-- Right Side Menu -->
+    <div style="display: flex; flex-direction: column; gap: 20px; width: 25%; flex-shrink: 0;">
+      <!-- Participants List -->
+      <div class="participants">
+        <h3 class="participants__top">Participants <span>({{participants.count}} Joined)</span></h3>
+        <div class="participants__list scroll" style="height: auto; max-height: 300px;">
+          {% for user in participants %}
+          <a href="{%  url 'user-profile' user.id %}" class="participant" style="margin-bottom: 15px;">
+            <div class="avatar avatar--medium">
+              <img src="{{user.avatar.url}}" />
+            </div>
+            <p>
+              {{user.name}}
+              <span>@{{user.username}}</span>
+            </p>
+          </a>
+          {% endfor %}
+        </div>
       </div>
+      
+      <!-- Invite Followings (Only for Private Room and Host) -->
+      {% if room.is_private and room.host == request.user %}
+      <div class="participants">
+        <h3 class="participants__top">Mời người theo dõi</h3>
+        <div class="participants__list scroll" style="height: auto; max-height: 250px;">
+          {% for follower in followings %}
+          <div class="participant" style="display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 8px 0; border-bottom: 1px solid var(--color-dark-medium); margin-bottom: 5px;">
+            <a href="{% url 'user-profile' follower.id %}" style="display: flex; align-items: center; gap: 10px;">
+              <div class="avatar avatar--small">
+                <img src="{{follower.avatar.url}}" />
+              </div>
+              <p style="font-size: 1.3rem;">@{{follower.username}}</p>
+            </a>
+            {% if follower.id in pending_invite_ids %}
+              <span style="font-size: 1.2rem; color: var(--color-light); font-style: italic;">Đã mời</span>
+            {% else %}
+              <a href="{% url 'send-invitation' room.id follower.id %}" class="btn btn--main" style="padding: 4px 8px; font-size: 1.1rem; border-radius: 4px;">Mời</a>
+            {% endif %}
+          </div>
+          {% empty %}
+          <p style="padding: 15px; font-size: 1.3rem; color: var(--color-light); text-align: center;">Không có người theo dõi nào để mời.</p>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
     </div>
-    <!--  End -->
+
   </div>
 </main>
-<script src="script.js"></script>
+
+<!-- Scripts -->
+<script src="https://meet.jit.si/external_api.js"></script>
+<script>
+  // Setup reply function
+  function bindReplyButtons() {
+    const replyButtons = document.querySelectorAll('.reply-btn');
+    const replyPreview = document.getElementById('reply-preview');
+    const replyText = document.getElementById('reply-text');
+    const parentIdInput = document.getElementById('parent-id-input');
+    
+    replyButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const msgId = btn.dataset.id;
+        const username = btn.dataset.username;
+        parentIdInput.value = msgId;
+        replyText.innerText = `Đang trả lời @${username}`;
+        replyPreview.style.display = 'flex';
+        document.getElementById('chat-message-input').focus();
+        
+        // Scroll comment box into view
+        document.querySelector('.reddit-comment-box-container').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      });
+    });
+  }
+
+  const cancelReplyBtn = document.getElementById('cancel-reply-btn');
+  if (cancelReplyBtn) {
+    cancelReplyBtn.addEventListener('click', () => {
+      document.getElementById('parent-id-input').value = '';
+      document.getElementById('reply-preview').style.display = 'none';
+    });
+  }
+
+  // Initial binding of reply buttons
+  bindReplyButtons();
+
+  // File selection previews
+  function previewFile(type) {
+    const input = document.getElementById('chat-' + type);
+    const preview = document.getElementById('file-preview-name');
+    if (input.files && input.files[0]) {
+      preview.style.display = 'block';
+      preview.innerHTML = `Đã chọn ${type}: <strong>${input.files[0].name}</strong> (sẽ tải lên khi gửi)`;
+    }
+  }
+
+  // Jitsi Video Call Implementation
+  const videoCallBtn = document.getElementById('video-call-btn');
+  const videoCallContainer = document.getElementById('video-call-container');
+  const closeVideoCallBtn = document.getElementById('close-video-call');
+  let jitsiApi = null;
+
+  if (videoCallBtn) {
+    videoCallBtn.addEventListener('click', () => {
+      videoCallContainer.style.display = 'block';
+      
+      const domain = 'meet.jit.si';
+      const options = {
+        roomName: 'studybud_room_' + '{{ room.id }}',
+        width: '100%',
+        height: '100%',
+        parentNode: document.querySelector('#jitsi-meet-room'),
+        userInfo: {
+          displayName: '{{ request.user.username }}'
+        },
+        interfaceConfigOverwrite: {
+          DEFAULT_BACKGROUND: '#1d1d1d',
+          SHOW_JITSI_WATERMARK: false,
+        }
+      };
+      
+      if (!jitsiApi) {
+        jitsiApi = new JitsiMeetExternalAPI(domain, options);
+      }
+    });
+  }
+
+  if (closeVideoCallBtn) {
+    closeVideoCallBtn.addEventListener('click', () => {
+      videoCallContainer.style.display = 'none';
+      if (jitsiApi) {
+        jitsiApi.dispose();
+        jitsiApi = null;
+      }
+      document.querySelector('#jitsi-meet-room').innerHTML = '';
+    });
+  }
+
+  // WebSocket Connection
+  const chatForm = document.getElementById('chat-form');
+  const chatMessageInput = document.getElementById('chat-message-input');
+  const parentIdInput = document.getElementById('parent-id-input');
+
+  {% if request.user.is_authenticated %}
+  const roomSocketUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/chat/' + '{{ room.id }}' + '/';
+  const chatSocket = new WebSocket(roomSocketUrl);
+
+  chatSocket.onmessage = function(e) {
+    // Reload threads list smoothly using AJAX
+    fetch(window.location.href)
+      .then(response => response.text())
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newThreads = doc.querySelector('.threads');
+        if (newThreads) {
+          document.querySelector('.threads').innerHTML = newThreads.innerHTML;
+          bindReplyButtons();
+        }
+      });
+  };
+
+  chatSocket.onclose = function(e) {
+    console.log('Chat socket closed unexpectedly');
+  };
+
+  if (chatForm) {
+    chatForm.addEventListener('submit', function(e) {
+      const imageInput = document.getElementById('chat-image');
+      const videoInput = document.getElementById('chat-video');
+      
+      // If image or video is attached, send through normal POST upload
+      if ((imageInput && imageInput.files.length > 0) || (videoInput && videoInput.files.length > 0)) {
+        return; 
+      }
+      
+      e.preventDefault();
+      const body = chatMessageInput.value;
+      const parent_id = parentIdInput.value;
+      
+      if (body.trim() !== '') {
+        chatSocket.send(JSON.stringify({
+          'body': body,
+          'parent_id': parent_id
+        }));
+        chatMessageInput.value = '';
+        parentIdInput.value = '';
+        document.getElementById('reply-preview').style.display = 'none';
+        
+        // Hide file preview name
+        document.getElementById('file-preview-name').style.display = 'none';
+      }
+    });
+  }
+  {% endif %}
+</script>
 {% endblock content %}

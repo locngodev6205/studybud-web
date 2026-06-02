@@ -44,6 +44,13 @@
             {{form.description}}
           </div>
 
+          <div class="form__group">
+            <label for="is_private" style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" name="is_private" id="is_private" {% if room.is_private %}checked{% endif %} style="width: auto;" />
+              Phòng riêng tư (chỉ người được mời mới có thể vào)
+            </label>
+          </div>
+
           <!-- <div class="form__group">
             <label for="room_topic">Topic</label>
             <input required type="text" name="topic" id="room_topic" list="topic-list" />

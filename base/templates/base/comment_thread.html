@@ -1,0 +1,67 @@
+{% load custom_tags %}
+{# Recursive comment template - renders a comment and all nested replies #}
+
+<div class="reddit-comment-card" id="message-{{ comment.id }}">
+  <div class="reddit-comment-body">
+    <!-- Metadata: Avatar, Tên user, Thời gian -->
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 1.25rem;">
+      <a href="{% url 'user-profile' comment.user.id %}" style="display: flex; align-items: center; gap: 8px; font-weight: bold; color: var(--color-light);">
+        <div class="avatar avatar--small" style="width: 2.4rem; height: 2.4rem;">
+          <img src="{{comment.user.avatar.url}}" />
+        </div>
+        <span>@{{comment.user.username}}</span>
+      </a>
+      <span style="color: var(--color-gray);">•</span>
+      <span style="color: var(--color-gray);">{{comment.created|timesince}} ago</span>
+    </div>
+    
+    <!-- Comment Content -->
+    <div style="font-size: 1.4rem; color: var(--color-light); line-height: 1.5; padding: 5px 0;">
+      {% if comment.body %}
+        <p>{{comment.body}}</p>
+      {% endif %}
+      {% if comment.image %}
+        <div style="margin-top: 10px; border-radius: 6px; overflow: hidden; display: inline-block;">
+          <img src="{{ comment.image.url }}" style="max-width: 300px; max-height: 200px; object-fit: contain;" />
+        </div>
+      {% endif %}
+      {% if comment.video %}
+        <div style="margin-top: 10px; border-radius: 6px; overflow: hidden;">
+          <video src="{{ comment.video.url }}" controls style="max-width: 300px; max-height: 200px;"></video>
+        </div>
+      {% endif %}
+    </div>
+    
+    <!-- Action Bar -->
+    <div class="reddit-action-bar">
+      <!-- Vote -->
+      <div class="reddit-vote-horizontal">
+        <a href="{% url 'vote-message' comment.id 'up' %}" class="{% if comment|get_user_vote:request.user == 1 %}upvoted{% endif %}" title="Vote Up">▲</a>
+        <span style="font-weight: bold; font-size: 1.2rem; color: var(--color-light);">{{ comment.vote_score }}</span>
+        <a href="{% url 'vote-message' comment.id 'down' %}" class="{% if comment|get_user_vote:request.user == -1 %}downvoted{% endif %}" title="Vote Down">▼</a>
+      </div>
+      
+      <!-- Reply -->
+      {% if request.user.is_authenticated %}
+      <button class="reply-btn reddit-action-btn" data-id="{{ comment.id }}" data-username="{{ comment.user.username }}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 1.2rem; height: 1.2rem;"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+        Reply
+      </button>
+      {% endif %}
+      
+      <!-- Delete -->
+      {% if request.user == comment.user %}
+      <a href="{% url 'delete-message' comment.id %}" class="reddit-action-btn" style="text-decoration: none;">Delete</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Recursive replies -->
+{% if comment.replies.exists %}
+<div class="reddit-replies-container">
+  {% for reply in comment.replies.all %}
+    {% include "base/comment_thread.html" with comment=reply %}
+  {% endfor %}
+</div>
+{% endif %}

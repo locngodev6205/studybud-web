@@ -18,8 +18,16 @@
         <div class="profile__info">
           <h3>{{user.name}}</h3>
           <p>@{{user.username}}</p>
+          <p style="margin: 8px 0; color: var(--color-light); font-size: 1.4rem;">
+            <strong>{{user.followers_count}}</strong> Người theo dõi &nbsp;•&nbsp; 
+            <strong>{{user.following_count}}</strong> Đang theo dõi
+          </p>
           {% if request.user == user %}
           <a href="{% url 'update-user' %}" class="btn btn--main btn--pill">Edit Profile</a>
+          {% elif request.user.is_authenticated %}
+          <a href="{% url 'follow-user' user.id %}" class="btn btn--main btn--pill">
+            {% if is_following %}Hủy theo dõi{% else %}Theo dõi{% endif %}
+          </a>
           {% endif %}
         </div>
         <div class="profile__about">
@@ -32,7 +40,7 @@
 
       <div class="roomList__header">
         <div>
-          <h2>Study Rooms Hosted by dennis_ivy</a>
+          <h2>Study Rooms Hosted by {{user.name}}
           </h2>
         </div>
       </div>
